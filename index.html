@@ -37,8 +37,10 @@
             <p class="text-lg text-gray-600">Online Booking</p>
         </header>
 
+        <div id="loading-message" class="text-center text-gray-500 my-4">Connecting to database...</div>
+
         <!-- Main Booking Area -->
-        <div class="flex flex-col lg:flex-row gap-8">
+        <div id="main-content" class="flex flex-col lg:flex-row gap-8 hidden">
             <!-- Calendar and Date Selection -->
             <div class="w-full lg:w-1/2">
                 <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
@@ -68,6 +70,12 @@
                     <h3 id="selected-date-title" class="text-lg font-semibold text-gray-700 mb-3">Available Time Ranges</h3>
                     
                     <form id="time-range-form" class="space-y-4">
+                        <!-- New input field for client name -->
+                        <div>
+                            <label for="client-name" class="block text-sm font-medium text-gray-700">Your Name</label>
+                            <input type="text" id="client-name" required placeholder="e.g. Jane Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
+                        </div>
+
                         <div>
                             <label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
                             <select id="start-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
@@ -103,17 +111,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Initialization and Authentication
         setLogLevel('Debug');
-        
-        // ** Firebase Configuration **
-        // Using the firebase config provided by the environment
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
@@ -136,26 +139,41 @@
         const noTimeslotsMsg = document.getElementById('no-timeslots');
         const confirmationContainer = document.getElementById('confirmation-container');
         const whatsappLink = document.getElementById('whatsapp-link');
+        const loadingMessage = document.getElementById('loading-message');
+        const mainContent = document.getElementById('main-content');
+        // New: get reference to client name input
+        const clientNameInput = document.getElementById('client-name');
 
         const initializeFirebase = async () => {
             try {
+                // Use the global Firebase config and auth token
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                const appIdForFirestore = typeof __app_id !== 'undefined' ? __app_id : 'hair-by-diana-app';
+
+                if (!firebaseConfig) {
+                    throw new Error("Firebase configuration is not available.");
+                }
+                
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                
-                // Use custom token for authentication if available, otherwise sign in anonymously
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+
+                // Sign in with custom token or anonymously if the token is not available
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
 
-                onAuthStateChanged(auth, (user) => {
+                auth.onAuthStateChanged((user) => {
                     if (user) {
                         userId = user.uid;
-                        appointmentsCol = collection(db, `/artifacts/${appId}/public/data/appointments`);
+                        appointmentsCol = collection(db, `/artifacts/${appIdForFirestore}/public/data/appointments`);
                         renderCalendar();
                         loadBookedSlots();
+                        loadingMessage.classList.add('hidden');
+                        mainContent.classList.remove('hidden');
                     } else {
                         console.log("User is signed out.");
                     }
@@ -345,11 +363,19 @@
 
         timeRangeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const clientName = "Client"; // Hardcoded for this simple example
+            if (!appointmentsCol) {
+                console.error("Firestore collection is not initialized. Please wait for Firebase to connect.");
+                return;
+            }
+            // Get the name from the new input field
+            const clientName = clientNameInput.value.trim();
             const startTime = startTimeSelect.value;
             const endTime = endTimeSelect.value;
 
-            if (!selectedDate || !startTime || !endTime) return;
+            if (!selectedDate || !startTime || !endTime || !clientName) {
+                console.log("Please fill out all fields.");
+                return;
+            }
 
             const [startHour, startMinute] = startTime.split(':').map(Number);
             const [endHour, endMinute] = endTime.split(':').map(Number);
@@ -358,6 +384,7 @@
             const endDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
 
             const newAppointment = {
+                // Use the name from the input field
                 name: clientName,
                 startDateTime: startDateTime.toISOString(),
                 endDateTime: endDateTime.toISOString(),
@@ -365,7 +392,7 @@
 
             try {
                 await addDoc(appointmentsCol, newAppointment);
-                showConfirmation(startTime, endTime);
+                showConfirmation(startTime, endTime, clientName);
             } catch (error) {
                 console.error("Error adding document: ", error);
                 // Do not use alert()
@@ -373,12 +400,14 @@
             }
         });
 
-        const showConfirmation = (startTime, endTime) => {
+        // Add clientName parameter to the function
+        const showConfirmation = (startTime, endTime, clientName) => {
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.remove('hidden');
 
             const formattedDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            const whatsappMessage = `Hello Diana, I would like to book a hair appointment. My name is [Your Name], and I would like to book for ${formattedDate} from ${startTime} to ${endTime}.`;
+            // Update the WhatsApp message to include the client's name
+            const whatsappMessage = `Hello Diana, I would like to book a hair appointment. My name is ${clientName}, and I would like to book for ${formattedDate} from ${startTime} to ${endTime}.`;
             
             const whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
             whatsappLink.href = whatsappUrl;
@@ -388,6 +417,8 @@
             selectedDate = null;
             startTimeSelect.value = '';
             endTimeSelect.value = '';
+            // Clear the new client name input
+            clientNameInput.value = '';
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.add('hidden');
         };
