@@ -111,7 +111,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -146,30 +146,28 @@
 
         const initializeFirebase = async () => {
             try {
-                // Use the global Firebase config and auth token
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                const appIdForFirestore = typeof __app_id !== 'undefined' ? __app_id : 'hair-by-diana-app';
+                // IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION HERE
+                // You can find this in your Firebase Project Settings -> General
+                const firebaseConfig = {
+                  apiKey: "AIzaSyDdOltW9_5YxAI4JObxHYVvkH8Ubh9tXnM",
+                  authDomain: "hair-by-diana.firebaseapp.com",
+                  projectId: "hair-by-diana",
+                  storageBucket: "hair-by-diana.firebasestorage.app",
+                  messagingSenderId: "254702590742",
+                  appId: "1:254702590742:web:8b1007b3792bbb4d908e37",
+                  measurementId: "G-3643RVMJK1"
+                };
 
-                if (!firebaseConfig) {
-                    throw new Error("Firebase configuration is not available.");
-                }
-                
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Sign in with custom token or anonymously if the token is not available
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
 
                 auth.onAuthStateChanged((user) => {
                     if (user) {
                         userId = user.uid;
-                        appointmentsCol = collection(db, `/artifacts/${appIdForFirestore}/public/data/appointments`);
+                        appointmentsCol = collection(db, `/artifacts/${firebaseConfig.projectId}/public/data/appointments`);
                         renderCalendar();
                         loadBookedSlots();
                         loadingMessage.classList.add('hidden');
