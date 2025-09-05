@@ -103,26 +103,19 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Initialization and Authentication
         setLogLevel('Debug');
         
-        // **IMPORTANT:** PASTE YOUR ENTIRE FIREBASE CONFIG OBJECT HERE
-        // You can find this object in your Firebase Console under Project settings.
-        // Replace the entire object below with the one you copied from Firebase.
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // ** Firebase Configuration **
+        // Using the firebase config provided by the environment
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
-        // **IMPORTANT:** Replace 'YOUR_PHONE_NUMBER' with your WhatsApp number.
+        // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
         
         let db, auth, appointmentsCol, userId;
@@ -150,13 +143,17 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Sign in anonymously for public access
-                await signInAnonymously(auth);
+                // Use custom token for authentication if available, otherwise sign in anonymously
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        appointmentsCol = collection(db, `/artifacts/default-app-id/public/data/appointments`);
+                        appointmentsCol = collection(db, `/artifacts/${appId}/public/data/appointments`);
                         renderCalendar();
                         loadBookedSlots();
                     } else {
