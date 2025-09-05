@@ -254,9 +254,12 @@
                     start: new Date(doc.data().startDateTime),
                     end: new Date(doc.data().endDateTime)
                 }));
+                
+                // Mark days with bookings on the calendar
                 document.querySelectorAll('.calendar-day-cell').forEach(cell => {
                     const cellDate = new Date(cell.dataset.date).toDateString();
-                    if (bookedSlots.some(slot => slot.start.toDateString() === cellDate)) {
+                    const hasBooking = bookedSlots.some(slot => slot.start.toDateString() === cellDate);
+                    if (hasBooking) {
                         cell.classList.add('booked-day');
                     } else {
                         cell.classList.remove('booked-day');
@@ -289,13 +292,18 @@
                     return slotDateTime >= range.start && slotDateTime < range.end;
                 });
 
-                if (!isBooked) {
-                    const option = document.createElement('option');
-                    option.value = time;
-                    option.textContent = time;
-                    startTimeSelect.appendChild(option);
+                const option = document.createElement('option');
+                option.value = time;
+                option.textContent = time;
+
+                if (isBooked) {
+                    option.disabled = true;
+                    option.classList.add('booked');
+                    option.textContent += ' (Booked)';
+                } else {
                     hasAvailableSlots = true;
                 }
+                startTimeSelect.appendChild(option);
             });
 
             if (!hasAvailableSlots) {
@@ -324,14 +332,14 @@
                     return slotDateTime > range.start && slotDateTime <= range.end;
                 });
 
-                if (!isBooked) {
-                    const option = document.createElement('option');
-                    option.value = endTime;
-                    option.textContent = endTime;
-                    endTimeSelect.appendChild(option);
-                } else {
-                    break;
+                if (isBooked) {
+                    break; // Stop adding options once a booked slot is encountered
                 }
+
+                const option = document.createElement('option');
+                option.value = endTime;
+                option.textContent = endTime;
+                endTimeSelect.appendChild(option);
             }
         });
 
@@ -354,6 +362,16 @@
             }
             return slots;
         };
+        
+        // Helper function to check for appointment overlap
+        const hasOverlap = (newStart, newEnd, existingSlots) => {
+            for (const slot of existingSlots) {
+                if (newStart < slot.end && newEnd > slot.start) {
+                    return true;
+                }
+            }
+            return false;
+        };
 
         timeRangeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -373,13 +391,20 @@
             const [startHour, startMinute] = startTime.split(':').map(Number);
             const [endHour, endMinute] = endTime.split(':').map(Number);
             
-            const startDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
-            const endDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
+            const newStartDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
+            const newEndDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
+
+            // Double check for overlap to prevent race conditions
+            if (hasOverlap(newStartDateTime, newEndDateTime, bookedSlots)) {
+                console.error("This time slot has been booked by another user. Please select a different time.");
+                // You could display a message to the user here.
+                return;
+            }
 
             const newAppointment = {
                 name: clientName,
-                startDateTime: startDateTime.toISOString(),
-                endDateTime: endDateTime.toISOString(),
+                startDateTime: newStartDateTime.toISOString(),
+                endDateTime: newEndDateTime.toISOString(),
             };
 
             try {
