@@ -111,12 +111,21 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Initialization and Authentication
-        setLogLevel('Debug');
+        // IMPORTANT: Paste your Firebase project configuration object here.
+        // You can find this in your Firebase project settings under "Project settings" > "Your apps"
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdOltW9_5YxAI4JObxHYVvkH8Ubh9tXnM",
+            authDomain: "hair-by-diana.firebaseapp.com",
+            projectId: "hair-by-diana",
+            storageBucket: "hair-by-diana.firebasestorage.app",
+            messagingSenderId: "254702590742",
+            appId: "1:254702590742:web:8b1007b3792bbb4d908e37",
+            measurementId: "G-3643RVMJK1"
+        };
         
         // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
@@ -141,30 +150,28 @@
         const whatsappLink = document.getElementById('whatsapp-link');
         const loadingMessage = document.getElementById('loading-message');
         const mainContent = document.getElementById('main-content');
-        // New: get reference to client name input
         const clientNameInput = document.getElementById('client-name');
 
         const initializeFirebase = async () => {
             try {
-                // Use the Firebase config provided by the environment
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                // If you are using this in the Canvas environment, use the provided config
+                // Otherwise, use the hardcoded config above.
+                const configToUse = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : firebaseConfig;
+                const appIdToUse = (typeof __app_id !== 'undefined') ? __app_id : 'default-app-id';
 
-                const app = initializeApp(firebaseConfig);
+                const app = initializeApp(configToUse);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Authenticate using the provided token, or fall back to anonymous sign-in
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // This code is now configured for use outside of the Canvas environment.
+                // It will always sign in anonymously.
+                await signInAnonymously(auth);
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        appointmentsCol = collection(db, `/artifacts/${appId}/public/data/appointments`);
+                        // The collection path is now simpler for public hosting
+                        appointmentsCol = collection(db, 'appointments');
                         renderCalendar();
                         loadBookedSlots();
                         loadingMessage.classList.add('hidden');
@@ -201,14 +208,12 @@
                 dayElement.textContent = day;
                 dayElement.dataset.date = fullDate.toISOString();
 
-                // Disable Sundays and past dates
                 if (fullDate.getDay() === 0 || fullDate < new Date().setHours(0,0,0,0)) {
                     dayElement.classList.add('disabled');
                     dayElement.style.cursor = 'not-allowed';
                 } else {
                     dayElement.addEventListener('click', () => {
                         selectedDate = fullDate;
-                        // Remove highlight from previous selection
                         document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
                         dayElement.classList.add('ring-2', 'ring-purple-500', 'ring-offset-2');
                         renderTimeSelects();
@@ -249,7 +254,6 @@
                     start: new Date(doc.data().startDateTime),
                     end: new Date(doc.data().endDateTime)
                 }));
-                // Mark days with bookings on the calendar
                 document.querySelectorAll('.calendar-day-cell').forEach(cell => {
                     const cellDate = new Date(cell.dataset.date).toDateString();
                     if (bookedSlots.some(slot => slot.start.toDateString() === cellDate)) {
@@ -271,7 +275,6 @@
             timeslotsContainer.classList.remove('hidden');
             selectedDateTitle.textContent = `Available Time Ranges for ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
 
-            // Clear previous options
             startTimeSelect.innerHTML = '<option value="">Select a start time</option>';
             endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
 
@@ -282,12 +285,10 @@
                 const [hour, minute] = time.split(':');
                 const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hour, minute);
                 
-                // Check if this slot is part of a booked range
                 const isBooked = bookedSlots.some(range => {
                     return slotDateTime >= range.start && slotDateTime < range.end;
                 });
 
-                // Only add available slots to the dropdown
                 if (!isBooked) {
                     const option = document.createElement('option');
                     option.value = time;
@@ -319,7 +320,6 @@
                 const [endHour, endMinute] = endTime.split(':');
                 const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
                 
-                // Check if the current slot is not booked and the range is valid
                 const isBooked = bookedSlots.some(range => {
                     return slotDateTime > range.start && slotDateTime <= range.end;
                 });
@@ -330,7 +330,6 @@
                     option.textContent = endTime;
                     endTimeSelect.appendChild(option);
                 } else {
-                    // Stop adding options if we hit a booked slot
                     break;
                 }
             }
@@ -362,7 +361,6 @@
                 console.error("Firestore collection is not initialized. Please wait for Firebase to connect.");
                 return;
             }
-            // Get the name from the new input field
             const clientName = clientNameInput.value.trim();
             const startTime = startTimeSelect.value;
             const endTime = endTimeSelect.value;
@@ -379,7 +377,6 @@
             const endDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
 
             const newAppointment = {
-                // Use the name from the input field
                 name: clientName,
                 startDateTime: startDateTime.toISOString(),
                 endDateTime: endDateTime.toISOString(),
@@ -390,18 +387,15 @@
                 showConfirmation(startTime, endTime, clientName);
             } catch (error) {
                 console.error("Error adding document: ", error);
-                // Do not use alert()
                 console.log('An error occurred during booking. Please try again.');
             }
         });
 
-        // Add clientName parameter to the function
         const showConfirmation = (startTime, endTime, clientName) => {
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.remove('hidden');
 
             const formattedDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            // Update the WhatsApp message to include the client's name
             const whatsappMessage = `Hello Diana, I would like to book a hair appointment. My name is ${clientName}, and I would like to book for ${formattedDate} from ${startTime} to ${endTime}.`;
             
             const whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
@@ -412,7 +406,6 @@
             selectedDate = null;
             startTimeSelect.value = '';
             endTimeSelect.value = '';
-            // Clear the new client name input
             clientNameInput.value = '';
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.add('hidden');
