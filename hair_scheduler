@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hair, Lashes, Nails & Flowers by Diana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .calendar-day-cell.disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .calendar-day-cell.booked-day {
+            background-color: #fecaca;
+        }
+        .timeslot-btn.booked {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+        .timeslot-btn.booked:hover {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <div id="app" class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+        <header class="text-center border-b pb-4 mb-4">
+            <h1 class="text-4xl font-bold text-gray-800 tracking-wide">Hair, Lashes, Nails & Flowers by Diana</h1>
+            <p class="text-lg text-gray-600">Online Booking</p>
+        </header>
+
+        <!-- Main Booking Area -->
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Calendar and Date Selection -->
+            <div class="w-full lg:w-1/2">
+                <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="prev-month" class="p-2 rounded-full hover:bg-gray-200 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <h2 id="current-month" class="text-xl font-semibold text-gray-700"></h2>
+                        <button id="next-month" class="p-2 rounded-full hover:bg-gray-200 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center font-medium text-sm text-gray-500 mb-2">
+                        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+                </div>
+            </div>
+
+            <!-- Timeslots and Form -->
+            <div class="w-full lg:w-1/2">
+                <div id="timeslots-container" class="bg-gray-50 p-4 rounded-xl shadow-inner mb-6 hidden">
+                    <h3 id="selected-date-title" class="text-lg font-semibold text-gray-700 mb-3">Available Time Ranges</h3>
+                    
+                    <form id="time-range-form" class="space-y-4">
+                        <div>
+                            <label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
+                            <select id="start-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
+                                <option value="">Select a start time</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="end-time" class="block text-sm font-medium text-gray-700">End Time</label>
+                            <select id="end-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
+                                <option value="">Select an end time</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-xl font-semibold hover:bg-purple-700 transition duration-300 shadow-md">
+                            Book Appointment
+                        </button>
+                    </form>
+                    <p id="no-timeslots" class="text-gray-400 text-center mt-4 hidden">No available timeslots for this day.</p>
+                </div>
+                
+                <div id="confirmation-container" class="bg-green-50 text-center p-6 rounded-xl shadow-inner hidden">
+                    <h3 class="text-xl font-semibold text-green-700 mb-3">Appointment Booked!</h3>
+                    <p class="text-gray-600 mb-4">Your appointment has been successfully booked. Please send a message to Diana to confirm the details.</p>
+                    <a id="whatsapp-link" href="#" target="_blank" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.04 2.22c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.5 3.42 1.46 4.86l-1.5 5.48 5.6-1.47c1.4.78 2.94 1.2 4.5 1.2 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm0 18.04c-1.5 0-2.93-.41-4.17-1.16l-.29-.17-3.05.8-1.57-2.61.2-.26c-1.01-1.42-1.59-3.08-1.59-4.87 0-4.5 3.65-8.16 8.16-8.16s8.16 3.65 8.16 8.16c0 4.5-3.65 8.16-8.16 8.16zm5.12-6.5c-.28-.14-.58-.2-.89-.24-.31-.04-.63-.07-.94-.07-.94 0-1.87.27-2.6.84-.73.57-1.19 1.4-1.19 2.37v.06c0 .28-.2.58-.5.58-.1 0-.25-.04-.37-.09-.13-.05-.28-.12-.4-.19-.12-.07-.25-.16-.36-.26-.1-.1-.2-.22-.3-.35-.1-.13-.19-.28-.27-.44-.09-.17-.16-.35-.22-.54-.06-.2-.09-.4-.09-.6.04-.36.19-.69.41-1.01.21-.32.49-.57.81-.8.29-.21.5-.47.66-.78.16-.31.25-.66.25-1.03 0-.46-.14-.88-.41-1.29-.27-.41-.62-.76-1.03-1.07-.42-.31-.88-.55-1.37-.73-.49-.18-1.01-.27-1.53-.27-.51 0-.97.12-1.36.35-.39.23-.71.53-.96.9-.25.37-.41.8-.49 1.29-.08.49-.06 1.01.06 1.53.12.52.32.99.6 1.41.28.42.64.79 1.05 1.13.4.34.86.64 1.35.88.49.24 1.02.43 1.57.56.55.13 1.12.19 1.7.19 1.54 0 3.02-.68 4.09-1.92.22-.26.33-.55.33-.86 0-.27-.1-.53-.29-.76zM11.97 4.14c4.32 0 7.82 3.5 7.82 7.82s-3.5 7.82-7.82 7.82-7.82-3.5-7.82-7.82c0-4.32 3.5-7.82 7.82-7.82zm-1.8 11.23c-.15.22-.27.46-.35.73-.08.27-.12.55-.12.84 0 .42.17.84.5.9.33.06.66-.02.94-.28.28-.26.44-.61.5-1.01.06-.4.02-.82-.12-1.22-.14-.4-.36-.78-.65-1.09-.29-.31-.63-.59-1.01-.84-.38-.25-.79-.47-1.22-.66-.43-.19-.88-.35-1.34-.48-.46-.13-.93-.21-1.42-.21-1.02 0-2.03.39-2.82 1.15-.79.76-1.22 1.8-1.22 2.87 0 .53.11 1.05.32 1.54.21.49.52.92.89 1.28.37.36.8.63 1.26.8.46.17.95.27 1.46.27.53 0 1.04-.1 1.54-.29s.98-.44 1.41-.74c.43-.3.79-.65 1.08-1.04.29-.39.5-1.01.5-1.01v.01z"></path>
+                        </svg>
+                        Send a WhatsApp Message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Initialization and Authentication
+        setLogLevel('Debug');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // **IMPORTANT:** Replace 'YOUR_PHONE_NUMBER' with Diana's WhatsApp number.
+        const DIANA_WHATSAPP_NUMBER = '254743407631'; 
+        
+        let db, auth, appointmentsCol, userId;
+        let currentMonth = new Date();
+        let selectedDate = null;
+        let bookedSlots = [];
+        
+        // UI elements
+        const calendarGrid = document.getElementById('calendar-grid');
+        const currentMonthDisplay = document.getElementById('current-month');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const timeslotsContainer = document.getElementById('timeslots-container');
+        const timeRangeForm = document.getElementById('time-range-form');
+        const startTimeSelect = document.getElementById('start-time');
+        const endTimeSelect = document.getElementById('end-time');
+        const selectedDateTitle = document.getElementById('selected-date-title');
+        const noTimeslotsMsg = document.getElementById('no-timeslots');
+        const confirmationContainer = document.getElementById('confirmation-container');
+        const whatsappLink = document.getElementById('whatsapp-link');
+
+        const initializeFirebase = async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        appointmentsCol = collection(db, `/artifacts/${appId}/users/${userId}/appointments`);
+                        renderCalendar();
+                        loadBookedSlots();
+                    } else {
+                        console.log("User is signed out.");
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+            }
+        };
+
+        const renderCalendar = () => {
+            const today = new Date();
+            const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            const startDay = firstDayOfMonth.getDay();
+            
+            currentMonthDisplay.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+            calendarGrid.innerHTML = '';
+            
+            for (let i = 0; i < startDay; i++) {
+                const dayElement = document.createElement('div');
+                calendarGrid.appendChild(dayElement);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'transition', 'hover:bg-purple-200');
+                dayElement.classList.add('calendar-day-cell');
+
+                const fullDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                dayElement.textContent = day;
+                dayElement.dataset.date = fullDate.toISOString();
+
+                // Disable Sundays and past dates
+                if (fullDate.getDay() === 0 || fullDate < new Date().setHours(0,0,0,0)) {
+                    dayElement.classList.add('disabled');
+                    dayElement.style.cursor = 'not-allowed';
+                } else {
+                    dayElement.addEventListener('click', () => {
+                        selectedDate = fullDate;
+                        // Remove highlight from previous selection
+                        document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
+                        dayElement.classList.add('ring-2', 'ring-purple-500', 'ring-offset-2');
+                        renderTimeSelects();
+                    });
+                }
+                
+                calendarGrid.appendChild(dayElement);
+            }
+        };
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            renderCalendar();
+            loadBookedSlots();
+            resetView();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            renderCalendar();
+            loadBookedSlots();
+            resetView();
+        });
+
+        const loadBookedSlots = () => {
+            if (!appointmentsCol) return;
+            const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
+
+            const q = query(
+                appointmentsCol,
+                where('startDateTime', '>=', startOfMonth.toISOString()),
+                where('startDateTime', '<=', endOfMonth.toISOString())
+            );
+
+            onSnapshot(q, (querySnapshot) => {
+                bookedSlots = querySnapshot.docs.map(doc => ({
+                    start: new Date(doc.data().startDateTime),
+                    end: new Date(doc.data().endDateTime)
+                }));
+                // Mark days with bookings on the calendar
+                document.querySelectorAll('.calendar-day-cell').forEach(cell => {
+                    const cellDate = new Date(cell.dataset.date).toDateString();
+                    if (bookedSlots.some(slot => slot.start.toDateString() === cellDate)) {
+                        cell.classList.add('booked-day');
+                    } else {
+                        cell.classList.remove('booked-day');
+                    }
+                });
+                renderTimeSelects();
+            });
+        };
+
+        const renderTimeSelects = () => {
+            if (!selectedDate || selectedDate.getDay() === 0) {
+                timeslotsContainer.classList.add('hidden');
+                return;
+            }
+
+            timeslotsContainer.classList.remove('hidden');
+            selectedDateTitle.textContent = `Available Time Ranges for ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
+
+            // Clear previous options
+            startTimeSelect.innerHTML = '<option value="">Select a start time</option>';
+            endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
+
+            const timeSlots = generateTimeSlots('09:00', '17:00', 30);
+            let hasAvailableSlots = false;
+
+            timeSlots.forEach(time => {
+                const [hour, minute] = time.split(':');
+                const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hour, minute);
+                
+                // Check if this slot is part of a booked range
+                const isBooked = bookedSlots.some(range => {
+                    return slotDateTime >= range.start && slotDateTime < range.end;
+                });
+
+                // Only add available slots to the dropdown
+                if (!isBooked) {
+                    const option = document.createElement('option');
+                    option.value = time;
+                    option.textContent = time;
+                    startTimeSelect.appendChild(option);
+                    hasAvailableSlots = true;
+                }
+            });
+
+            if (!hasAvailableSlots) {
+                noTimeslotsMsg.classList.remove('hidden');
+                timeRangeForm.classList.add('hidden');
+            } else {
+                noTimeslotsMsg.classList.add('hidden');
+                timeRangeForm.classList.remove('hidden');
+            }
+        };
+
+        startTimeSelect.addEventListener('change', () => {
+            endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
+            const selectedStartTime = startTimeSelect.value;
+            if (!selectedStartTime) return;
+
+            const timeSlots = generateTimeSlots('09:00', '17:00', 30);
+            const startIndex = timeSlots.indexOf(selectedStartTime);
+            
+            for (let i = startIndex + 1; i < timeSlots.length; i++) {
+                const endTime = timeSlots[i];
+                const [endHour, endMinute] = endTime.split(':');
+                const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
+                
+                // Check if the current slot is not booked and the range is valid
+                const isBooked = bookedSlots.some(range => {
+                    return slotDateTime > range.start && slotDateTime <= range.end;
+                });
+
+                if (!isBooked) {
+                    const option = document.createElement('option');
+                    option.value = endTime;
+                    option.textContent = endTime;
+                    endTimeSelect.appendChild(option);
+                } else {
+                    // Stop adding options if we hit a booked slot
+                    break;
+                }
+            }
+        });
+
+        const generateTimeSlots = (start, end, interval) => {
+            const slots = [];
+            const [startHour, startMin] = start.split(':').map(Number);
+            const [endHour, endMin] = end.split(':').map(Number);
+
+            let currentTime = new Date();
+            currentTime.setHours(startHour, startMin, 0, 0);
+
+            const endTime = new Date();
+            endTime.setHours(endHour, endMin, 0, 0);
+
+            while (currentTime < endTime) {
+                const hour = String(currentTime.getHours()).padStart(2, '0');
+                const minute = String(currentTime.getMinutes()).padStart(2, '0');
+                slots.push(`${hour}:${minute}`);
+                currentTime.setMinutes(currentTime.getMinutes() + interval);
+            }
+            return slots;
+        };
+
+        timeRangeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientName = "Client"; // Hardcoded for this simple example
+            const startTime = startTimeSelect.value;
+            const endTime = endTimeSelect.value;
+
+            if (!selectedDate || !startTime || !endTime) return;
+
+            const [startHour, startMinute] = startTime.split(':').map(Number);
+            const [endHour, endMinute] = endTime.split(':').map(Number);
+            
+            const startDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
+            const endDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
+
+            const newAppointment = {
+                name: clientName,
+                startDateTime: startDateTime.toISOString(),
+                endDateTime: endDateTime.toISOString(),
+            };
+
+            try {
+                await addDoc(appointmentsCol, newAppointment);
+                showConfirmation(startTime, endTime);
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                // Do not use alert()
+                console.log('An error occurred during booking. Please try again.');
+            }
+        });
+
+        const showConfirmation = (startTime, endTime) => {
+            timeslotsContainer.classList.add('hidden');
+            confirmationContainer.classList.remove('hidden');
+
+            const formattedDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            const whatsappMessage = `Hello Diana, I would like to book a hair appointment. My name is [Your Name], and I would like to book for ${formattedDate} from ${startTime} to ${endTime}.`;
+            
+            const whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
+            whatsappLink.href = whatsappUrl;
+        };
+
+        const resetView = () => {
+            selectedDate = null;
+            startTimeSelect.value = '';
+            endTimeSelect.value = '';
+            timeslotsContainer.classList.add('hidden');
+            confirmationContainer.classList.add('hidden');
+        };
+
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
