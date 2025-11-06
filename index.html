@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hair, Lashes, Nails & Flowers by Diana</title>
+    <title>Hair, Lashes & Nails by Diana Booking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -28,18 +28,40 @@
         .timeslot-btn.booked:hover {
             background-color: #e5e7eb;
         }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
     <div id="app" class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
         <header class="text-center border-b pb-4 mb-4">
-            <h1 class="text-4xl font-bold text-gray-800 tracking-wide">Hair, Lashes, Nails & Flowers by Diana</h1>
+            <!-- UPDATED HEADING -->
+            <h1 class="text-4xl font-bold text-gray-800 tracking-wide">Hair, Lashes & Nails by Diana</h1>
             <p class="text-lg text-gray-600">Online Booking</p>
         </header>
 
         <div id="loading-message" class="text-center text-gray-500 my-4">Connecting to database...</div>
 
+        <!-- Main Booking Area -->
         <div id="main-content" class="flex flex-col lg:flex-row gap-8 hidden">
+            <!-- Calendar and Date Selection -->
             <div class="w-full lg:w-1/2">
                 <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
                     <div class="flex items-center justify-between mb-4">
@@ -62,22 +84,26 @@
                 </div>
             </div>
 
+            <!-- Timeslots and Form -->
             <div class="w-full lg:w-1/2">
                 <div id="timeslots-container" class="bg-gray-50 p-4 rounded-xl shadow-inner mb-6 hidden">
                     <h3 id="selected-date-title" class="text-lg font-semibold text-gray-700 mb-3">Available Time Ranges</h3>
                     
                     <form id="time-range-form" class="space-y-4">
+                        <!-- Client Name Input -->
                         <div>
                             <label for="client-name" class="block text-sm font-medium text-gray-700">Your Name</label>
                             <input type="text" id="client-name" required placeholder="e.g. Jane Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
                         </div>
 
+                        <!-- Start Time Select -->
                         <div>
                             <label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
                             <select id="start-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
                                 <option value="">Select a start time</option>
                             </select>
                         </div>
+                        <!-- End Time Select -->
                         <div>
                             <label for="end-time" class="block text-sm font-medium text-gray-700">End Time</label>
                             <select id="end-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
@@ -93,14 +119,18 @@
                 
                 <div id="confirmation-container" class="bg-yellow-50 text-center p-6 rounded-xl shadow-inner hidden">
                     <h3 class="text-xl font-semibold text-yellow-800 mb-3">Almost Booked!</h3>
-                    <p class="text-gray-600 mb-4 font-bold">Your time slot is **reserved for 5 minutes**. </p>
-                    <p class="text-gray-600 mb-6">⚠️ **You must send the message below to Diana** to confirm and fully secure your appointment. Until the message is received, the slot remains available to others.</p>
-                    <a id="whatsapp-link" href="#" target="_blank" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <p class="text-gray-600 mb-4 font-bold">Your booking is ready to be finalized.</p>
+                    <p class="text-gray-600 mb-6">Click the button below to **secure your slot** and send Diana the final confirmation message via WhatsApp.</p>
+                    
+                    <!-- CRITICAL: This button handles the Firestore write before redirecting -->
+                    <button id="whatsapp-confirm-btn" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg" disabled>
+                        <span id="whatsapp-loader" class="hidden loader"></span>
+                        <svg id="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12.04 2.22c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.5 3.42 1.46 4.86l-1.5 5.48 5.6-1.47c1.4.78 2.94 1.2 4.5 1.2 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm0 18.04c-1.5 0-2.93-.41-4.17-1.16l-.29-.17-3.05.8-1.57-2.61.2-.26c-1.01-1.42-1.59-3.08-1.59-4.87 0-4.5 3.65-8.16 8.16-8.16s8.16 3.65 8.16 8.16c0 4.5-3.65 8.16-8.16 8.16zm5.12-6.5c-.28-.14-.58-.2-.89-.24-.31-.04-.63-.07-.94-.07-.94 0-1.87.27-2.6.84-.73.57-1.19 1.4-1.19 2.37v.06c0 .28-.2.58-.5.58-.1 0-.25-.04-.37-.09-.13-.05-.28-.12-.4-.19-.12-.07-.25-.16-.36-.26-.1-.1-.2-.22-.3-.35-.1-.13-.19-.28-.27-.44-.09-.17-.16-.35-.22-.54-.06-.2-.09-.4-.09-.6.04-.36.19-.69.41-1.01.21-.32.49-.57.81-.8.29-.21.5-.47.66-.78.16-.31.25-.66.25-1.03 0-.46-.14-.88-.41-1.29-.27-.41-.62-.76-1.03-1.07-.42-.31-.88-.55-1.37-.73-.49-.18-1.01-.27-1.53-.27-.51 0-.97.12-1.36.35-.39.23-.71.53-.96.9-.25.37-.41.8-.49 1.29-.08.49-.06 1.01.06 1.53.12.52.32.99.6 1.41.28.42.64.79 1.05 1.13.4.34.86.64 1.35.88.49.24 1.02.43 1.57.56.55.13 1.12.19 1.7.19 1.54 0 3.02-.68 4.09-1.92.22-.26.33-.55.33-.86 0-.27-.1-.53-.29-.76zM11.97 4.14c4.32 0 7.82 3.5 7.82 7.82s-3.5 7.82-7.82 7.82-7.82-3.5-7.82-7.82c0-4.32 3.5-7.82 7.82-7.82zm-1.8 11.23c-.15.22-.27.46-.35.73-.08.27-.12.55-.12.84 0 .42.17.84.5.9.33.06.66-.02.94-.28.28-.26.44-.61.5-1.01.06-.4.02-.82-.12-1.22-.14-.4-.36-.78-.65-1.09-.29-.31-.63-.59-1.01-.84-.38-.25-.79-.47-1.22-.66-.43-.19-.88-.35-1.34-.48-.46-.13-.93-.21-1.42-.21-1.02 0-2.03.39-2.82 1.15-.79.76-1.22 1.8-1.22 2.87 0 .53.11 1.05.32 1.54.21.49.52.92.89 1.28.37.36.8.63 1.26.8.46.17.95.27 1.46.27.53 0 1.04-.1 1.54-.29s.98-.44 1.41-.74c.43-.3.79-.65 1.08-1.04.29-.39.5-1.01.5-1.01v.01z"></path>
                         </svg>
-                        Send Confirmation Message
-                    </a>
+                        <span id="whatsapp-text">Send Confirmation Message</span>
+                    </button>
+                    <p id="booking-error" class="mt-4 text-red-600 hidden">Booking failed. Please try again.</p>
                 </div>
             </div>
         </div>
@@ -109,10 +139,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // NOTE: We keep addDoc for the final booking, but removed the need for query and where from the previous attempt.
-        import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Paste your Firebase project configuration object here.
+        // IMPORTANT: Replace with your actual Firebase project configuration.
+        // NOTE: These are dummy values and should be replaced by your real project configuration.
         const firebaseConfig = {
             apiKey: "AIzaSyDdOltW9_5YxAI4JObxHYVvkH8Ubh9tXnM",
             authDomain: "hair-by-diana.firebaseapp.com",
@@ -126,11 +156,12 @@
         // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
         
-        let db, auth, appointmentsCol, userId; // Removed pendingAppointmentsCol
+        let db, auth, appointmentsCol, userId;
         let currentMonth = new Date();
         let selectedDate = null;
         let bookedSlots = [];
-        
+        let currentBookingData = null; // Stores data before final WhatsApp click
+
         // UI elements
         const calendarGrid = document.getElementById('calendar-grid');
         const currentMonthDisplay = document.getElementById('current-month');
@@ -143,35 +174,52 @@
         const selectedDateTitle = document.getElementById('selected-date-title');
         const noTimeslotsMsg = document.getElementById('no-timeslots');
         const confirmationContainer = document.getElementById('confirmation-container');
-        const whatsappLink = document.getElementById('whatsapp-link');
+        const whatsappConfirmBtn = document.getElementById('whatsapp-confirm-btn');
+        const whatsappLoader = document.getElementById('whatsapp-loader');
+        const whatsappText = document.getElementById('whatsapp-text');
         const loadingMessage = document.getElementById('loading-message');
         const mainContent = document.getElementById('main-content');
         const clientNameInput = document.getElementById('client-name');
+        const bookingErrorMsg = document.getElementById('booking-error');
 
         const initializeFirebase = async () => {
             try {
+                // setLogLevel('debug'); // Uncomment for detailed Firebase logs
                 const configToUse = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : firebaseConfig;
                 const app = initializeApp(configToUse);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                
+                // Sign in anonymously using the provided token or fall back to standard anonymous sign-in.
+                const authPromise = typeof __initial_auth_token !== 'undefined'
+                    ? signInWithCustomToken(auth, __initial_auth_token)
+                    : signInAnonymously(auth);
 
-                await signInAnonymously(auth);
-
+                await authPromise;
+                
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        // Use the single 'appointments' collection for FINAL bookings
-                        appointmentsCol = collection(db, 'appointments'); 
+                        // MANDATORY FIREBASE PATH
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        appointmentsCol = collection(db, `/artifacts/${appId}/users/${userId}/appointments`); 
+                        
                         renderCalendar();
                         loadBookedSlots();
                         loadingMessage.classList.add('hidden');
                         mainContent.classList.remove('hidden');
+                        
+                        // Attach the FINAL booking handler after Firebase is ready
+                        whatsappConfirmBtn.addEventListener('click', handleWhatsAppConfirmation);
+                        whatsappConfirmBtn.disabled = false;
+                        whatsappText.textContent = 'Send Confirmation Message';
                     } else {
                         console.log("User is signed out.");
                     }
                 });
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
+                loadingMessage.textContent = "Error loading application. Check console for details.";
             }
         };
 
@@ -183,9 +231,9 @@
             currentMonthDisplay.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
             calendarGrid.innerHTML = '';
             
+            // Add leading empty divs
             for (let i = 0; i < startDay; i++) {
-                const dayElement = document.createElement('div');
-                calendarGrid.appendChild(dayElement);
+                calendarGrid.appendChild(document.createElement('div'));
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
@@ -197,6 +245,7 @@
                 dayElement.textContent = day;
                 dayElement.dataset.date = fullDate.toISOString(); 
 
+                // Disable past dates and Sundays (day 0)
                 if (fullDate.getDay() === 0 || fullDate < new Date().setHours(0,0,0,0)) {
                     dayElement.classList.add('disabled');
                     dayElement.style.cursor = 'not-allowed';
@@ -205,6 +254,7 @@
                         selectedDate = fullDate;
                         document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
                         dayElement.classList.add('ring-2', 'ring-purple-500', 'ring-offset-2');
+                        resetView(false); // Reset only the form, not the date
                         renderTimeSelects();
                     });
                 }
@@ -217,14 +267,14 @@
             currentMonth.setMonth(currentMonth.getMonth() - 1);
             renderCalendar();
             loadBookedSlots();
-            resetView();
+            resetView(true);
         });
 
         nextMonthBtn.addEventListener('click', () => {
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             renderCalendar();
             loadBookedSlots();
-            resetView();
+            resetView(true);
         });
 
         const loadBookedSlots = () => {
@@ -233,18 +283,19 @@
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
 
             const q = query(
-                appointmentsCol, // Only query the CONFIRMED appointments
+                appointmentsCol, 
                 where('startDateTime', '>=', startOfMonth.toISOString()),
                 where('startDateTime', '<=', endOfMonth.toISOString())
             );
 
+            // Real-time listener for confirmed appointments
             onSnapshot(q, (querySnapshot) => {
                 bookedSlots = querySnapshot.docs.map(doc => ({
                     start: new Date(doc.data().startDateTime),
                     end: new Date(doc.data().endDateTime)
                 }));
                 
-                // Mark days with bookings on the calendar
+                // Update calendar day colors and time select options
                 document.querySelectorAll('.calendar-day-cell').forEach(cell => {
                     const cellDate = new Date(cell.dataset.date).toDateString();
                     const hasBooking = bookedSlots.some(slot => slot.start.toDateString() === cellDate);
@@ -255,6 +306,8 @@
                     }
                 });
                 renderTimeSelects();
+            }, (error) => {
+                console.error("Error loading booked slots:", error);
             });
         };
 
@@ -317,6 +370,7 @@
                 const [endHour, endMinute] = endTime.split(':');
                 const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
                 
+                // Check if the current end time slot is overlapped by an existing booking
                 const isBooked = bookedSlots.some(range => {
                     return slotDateTime > range.start && slotDateTime <= range.end;
                 });
@@ -352,9 +406,9 @@
             return slots;
         };
         
-        // Helper function to check for appointment overlap (only against CONFIRMED bookings)
         const hasOverlap = (newStart, newEnd, existingSlots) => {
             for (const slot of existingSlots) {
+                // Check if the new range overlaps with any existing slot
                 if (newStart < slot.end && newEnd > slot.start) {
                     return true;
                 }
@@ -362,18 +416,16 @@
             return false;
         };
 
-        // MODIFIED: Submit now shows the confirmation link, but DOES NOT write to Firebase.
+        // STEP 1: Form Submission - Collects data and shows the final button
         timeRangeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // We do NOT check appointmentsCol here, because we are not writing to it yet.
             
             const clientName = clientNameInput.value.trim();
             const startTime = startTimeSelect.value;
             const endTime = endTimeSelect.value;
 
             if (!selectedDate || !startTime || !endTime || !clientName) {
-                console.log("Please fill out all fields.");
+                console.error("Please select a date, time range, and enter your name."); 
                 return;
             }
 
@@ -383,51 +435,86 @@
             const newStartDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
             const newEndDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
 
-            // Double check for overlap against CONFIRMED bookings only
+            // Final overlap check before presenting the WhatsApp button
             if (hasOverlap(newStartDateTime, newEndDateTime, bookedSlots)) {
-                alert("This time slot has been booked by another user. Please select a different time.");
-                // We show an alert instead of logging to console for the final version
+                console.error("This time slot has just been booked. Please select a different time."); 
                 return;
             }
 
-            // *******************************************************************
-            // CRITICAL CHANGE: Instead of writing to a PENDING collection, 
-            // we immediately jump to the confirmation screen.
-            // *******************************************************************
-            
-            // We pass the data the client selected so it can be used to construct 
-            // the final booking object if you decide to write it yourself.
-            const bookingData = {
+            // Prepare the final booking data and store it globally
+            currentBookingData = {
                 name: clientName,
                 startDateTime: newStartDateTime.toISOString(),
                 endDateTime: newEndDateTime.toISOString(),
-                startTime: startTime,
-                endTime: endTime
+                createdAt: new Date().toISOString()
             };
 
-            // This function now uses the bookingData to construct the WhatsApp message.
-            showConfirmation(bookingData); 
+            showConfirmation(currentBookingData); 
         });
 
-        // MODIFIED: Show confirmation with the simple booking details
+        // STEP 2: Show Confirmation Screen
         const showConfirmation = (bookingData) => {
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.remove('hidden');
-
-            const formattedDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            bookingErrorMsg.classList.add('hidden');
+            whatsappConfirmBtn.disabled = false;
+            whatsappText.textContent = 'Send Confirmation Message';
+            whatsappLoader.classList.add('hidden');
             
-            // Simple message for the client to send
-            const whatsappMessage = `Hello Diana, I confirm my booking for ${formattedDate} from ${bookingData.startTime} to ${bookingData.endTime}. My name is ${bookingData.name}. Please secure my spot!`;
-            
-            const whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
-            whatsappLink.href = whatsappUrl;
+            // This function prepares the WhatsApp message text
+            const formattedDate = new Date(bookingData.startDateTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            const startTime = new Date(bookingData.startDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const endTime = new Date(bookingData.endDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-            // Optional: You can console.log the data so you know what they tried to book.
-            console.log("Client is attempting to book:", bookingData);
+            // Store the full URL for easy access in the handler
+            const whatsappMessage = `Hello Diana, I just secured my final booking for ${formattedDate} from ${startTime} to ${endTime}. My name is ${bookingData.name}.`;
+            whatsappConfirmBtn.dataset.whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
         };
 
-        const resetView = () => {
-            selectedDate = null;
+        // STEP 3: Handle Final WhatsApp Click (CRITICAL) - Writes to Firebase
+        const handleWhatsAppConfirmation = async (e) => {
+            e.preventDefault();
+            
+            if (!currentBookingData || !appointmentsCol) {
+                console.error("Booking data or Firestore connection missing.");
+                bookingErrorMsg.classList.remove('hidden');
+                return;
+            }
+
+            // Start loading state
+            whatsappConfirmBtn.disabled = true;
+            whatsappText.textContent = 'Securing Slot...';
+            whatsappLoader.classList.remove('hidden');
+            bookingErrorMsg.classList.add('hidden');
+
+            try {
+                // 1. Write the final, confirmed booking to the database
+                // This is the point where the slot becomes booked for everyone else immediately.
+                await addDoc(appointmentsCol, currentBookingData);
+                
+                // 2. Booking is successful! Now navigate to WhatsApp
+                const whatsappUrl = whatsappConfirmBtn.dataset.whatsappUrl;
+                window.location.href = whatsappUrl; 
+                
+                // Note: The user is redirected immediately, the calendar updates automatically via onSnapshot.
+
+            } catch (error) {
+                console.error("Error securing booking:", error);
+                
+                // Show error state
+                whatsappConfirmBtn.disabled = false;
+                whatsappText.textContent = 'Booking Failed - Try Again';
+                whatsappLoader.classList.add('hidden');
+                bookingErrorMsg.classList.remove('hidden');
+            }
+        };
+
+        const resetView = (resetDate = false) => {
+            if (resetDate) {
+                selectedDate = null;
+                document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
+            }
+            currentBookingData = null;
             startTimeSelect.value = '';
             endTimeSelect.value = '';
             clientNameInput.value = '';
@@ -435,7 +522,6 @@
             endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.add('hidden');
-            document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
         };
 
         window.onload = initializeFirebase;
