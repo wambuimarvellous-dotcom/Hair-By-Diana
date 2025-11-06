@@ -85,16 +85,16 @@
                             </select>
                         </div>
                         <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-xl font-semibold hover:bg-purple-700 transition duration-300 shadow-md">
-                            Tentatively Book Appointment
+                            Reserve Slot (Final Step Required)
                         </button>
                     </form>
                     <p id="no-timeslots" class="text-gray-400 text-center mt-4 hidden">No available timeslots for this day.</p>
                 </div>
                 
-                <div id="confirmation-container" class="bg-green-50 text-center p-6 rounded-xl shadow-inner hidden">
-                    <h3 class="text-xl font-semibold text-green-700 mb-3">Tentative Booking Successful!</h3>
-                    <p class="text-gray-600 mb-4 font-bold">⚠️ To secure your appointment, you MUST confirm your booking.</p>
-                    <p class="text-gray-600 mb-6">Send the pre-filled WhatsApp message below to Diana. Your time slot will be reserved for a short period until the message is received and confirmed.</p>
+                <div id="confirmation-container" class="bg-yellow-50 text-center p-6 rounded-xl shadow-inner hidden">
+                    <h3 class="text-xl font-semibold text-yellow-800 mb-3">Almost Booked!</h3>
+                    <p class="text-gray-600 mb-4 font-bold">Your time slot is **reserved for 5 minutes**. </p>
+                    <p class="text-gray-600 mb-6">⚠️ **You must send the message below to Diana** to confirm and fully secure your appointment. Until the message is received, the slot remains available to others.</p>
                     <a id="whatsapp-link" href="#" target="_blank" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12.04 2.22c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.5 3.42 1.46 4.86l-1.5 5.48 5.6-1.47c1.4.78 2.94 1.2 4.5 1.2 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm0 18.04c-1.5 0-2.93-.41-4.17-1.16l-.29-.17-3.05.8-1.57-2.61.2-.26c-1.01-1.42-1.59-3.08-1.59-4.87 0-4.5 3.65-8.16 8.16-8.16s8.16 3.65 8.16 8.16c0 4.5-3.65 8.16-8.16 8.16zm5.12-6.5c-.28-.14-.58-.2-.89-.24-.31-.04-.63-.07-.94-.07-.94 0-1.87.27-2.6.84-.73.57-1.19 1.4-1.19 2.37v.06c0 .28-.2.58-.5.58-.1 0-.25-.04-.37-.09-.13-.05-.28-.12-.4-.19-.12-.07-.25-.16-.36-.26-.1-.1-.2-.22-.3-.35-.1-.13-.19-.28-.27-.44-.09-.17-.16-.35-.22-.54-.06-.2-.09-.4-.09-.6.04-.36.19-.69.41-1.01.21-.32.49-.57.81-.8.29-.21.5-.47.66-.78.16-.31.25-.66.25-1.03 0-.46-.14-.88-.41-1.29-.27-.41-.62-.76-1.03-1.07-.42-.31-.88-.55-1.37-.73-.49-.18-1.01-.27-1.53-.27-.51 0-.97.12-1.36.35-.39.23-.71.53-.96.9-.25.37-.41.8-.49 1.29-.08.49-.06 1.01.06 1.53.12.52.32.99.6 1.41.28.42.64.79 1.05 1.13.4.34.86.64 1.35.88.49.24 1.02.43 1.57.56.55.13 1.12.19 1.7.19 1.54 0 3.02-.68 4.09-1.92.22-.26.33-.55.33-.86 0-.27-.1-.53-.29-.76zM11.97 4.14c4.32 0 7.82 3.5 7.82 7.82s-3.5 7.82-7.82 7.82-7.82-3.5-7.82-7.82c0-4.32 3.5-7.82 7.82-7.82zm-1.8 11.23c-.15.22-.27.46-.35.73-.08.27-.12.55-.12.84 0 .42.17.84.5.9.33.06.66-.02.94-.28.28-.26.44-.61.5-1.01.06-.4.02-.82-.12-1.22-.14-.4-.36-.78-.65-1.09-.29-.31-.63-.59-1.01-.84-.38-.25-.79-.47-1.22-.66-.43-.19-.88-.35-1.34-.48-.46-.13-.93-.21-1.42-.21-1.02 0-2.03.39-2.82 1.15-.79.76-1.22 1.8-1.22 2.87 0 .53.11 1.05.32 1.54.21.49.52.92.89 1.28.37.36.8.63 1.26.8.46.17.95.27 1.46.27.53 0 1.04-.1 1.54-.29s.98-.44 1.41-.74c.43-.3.79-.65 1.08-1.04.29-.39.5-1.01.5-1.01v.01z"></path>
@@ -109,6 +109,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // NOTE: We keep addDoc for the final booking, but removed the need for query and where from the previous attempt.
         import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Paste your Firebase project configuration object here.
@@ -125,7 +126,7 @@
         // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
         
-        let db, auth, appointmentsCol, pendingAppointmentsCol, userId; // Added pendingAppointmentsCol
+        let db, auth, appointmentsCol, userId; // Removed pendingAppointmentsCol
         let currentMonth = new Date();
         let selectedDate = null;
         let bookedSlots = [];
@@ -159,12 +160,10 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        // Use separate collections for confirmed and tentative
-                        appointmentsCol = collection(db, 'appointments');
-                        // NEW: Collection for unconfirmed bookings
-                        pendingAppointmentsCol = collection(db, 'pending_appointments'); 
+                        // Use the single 'appointments' collection for FINAL bookings
+                        appointmentsCol = collection(db, 'appointments'); 
                         renderCalendar();
-                        loadBookedSlots(); // This will only load confirmed bookings
+                        loadBookedSlots();
                         loadingMessage.classList.add('hidden');
                         mainContent.classList.remove('hidden');
                     } else {
@@ -196,7 +195,6 @@
 
                 const fullDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                 dayElement.textContent = day;
-                // Storing the date in ISO format for easy comparison
                 dayElement.dataset.date = fullDate.toISOString(); 
 
                 if (fullDate.getDay() === 0 || fullDate < new Date().setHours(0,0,0,0)) {
@@ -229,7 +227,6 @@
             resetView();
         });
 
-        // Load **CONFIRMED** booked slots only
         const loadBookedSlots = () => {
             if (!appointmentsCol) return;
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -355,7 +352,7 @@
             return slots;
         };
         
-        // Helper function to check for appointment overlap
+        // Helper function to check for appointment overlap (only against CONFIRMED bookings)
         const hasOverlap = (newStart, newEnd, existingSlots) => {
             for (const slot of existingSlots) {
                 if (newStart < slot.end && newEnd > slot.start) {
@@ -365,13 +362,12 @@
             return false;
         };
 
-        // MODIFIED: Submit now creates a PENDING appointment
+        // MODIFIED: Submit now shows the confirmation link, but DOES NOT write to Firebase.
         timeRangeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!pendingAppointmentsCol) { // Use the pending collection
-                console.error("Firestore collection is not initialized. Please wait for Firebase to connect.");
-                return;
-            }
+            
+            // We do NOT check appointmentsCol here, because we are not writing to it yet.
+            
             const clientName = clientNameInput.value.trim();
             const startTime = startTimeSelect.value;
             const endTime = endTimeSelect.value;
@@ -389,44 +385,45 @@
 
             // Double check for overlap against CONFIRMED bookings only
             if (hasOverlap(newStartDateTime, newEndDateTime, bookedSlots)) {
-                console.error("This time slot has been booked by another user. Please select a different time.");
+                alert("This time slot has been booked by another user. Please select a different time.");
+                // We show an alert instead of logging to console for the final version
                 return;
             }
 
-            // NEW: Generate a simple confirmation code
-            const confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-            const newAppointment = {
+            // *******************************************************************
+            // CRITICAL CHANGE: Instead of writing to a PENDING collection, 
+            // we immediately jump to the confirmation screen.
+            // *******************************************************************
+            
+            // We pass the data the client selected so it can be used to construct 
+            // the final booking object if you decide to write it yourself.
+            const bookingData = {
                 name: clientName,
                 startDateTime: newStartDateTime.toISOString(),
                 endDateTime: newEndDateTime.toISOString(),
-                // NEW: Add confirmation code to the pending doc
-                confirmationCode: confirmationCode, 
-                // Status is inherently 'pending' since it's in the pending_appointments collection
+                startTime: startTime,
+                endTime: endTime
             };
 
-            try {
-                // ADD TO PENDING COLLECTION
-                await addDoc(pendingAppointmentsCol, newAppointment); 
-                showConfirmation(startTime, endTime, clientName, confirmationCode); // Pass the code
-            } catch (error) {
-                console.error("Error adding document: ", error);
-                console.log('An error occurred during tentative booking. Please try again.');
-            }
+            // This function now uses the bookingData to construct the WhatsApp message.
+            showConfirmation(bookingData); 
         });
 
-        // MODIFIED: Show confirmation with the unique code and updated message
-        const showConfirmation = (startTime, endTime, clientName, confirmationCode) => {
+        // MODIFIED: Show confirmation with the simple booking details
+        const showConfirmation = (bookingData) => {
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.remove('hidden');
 
             const formattedDate = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             
-            // The message now includes the unique confirmation code.
-            const whatsappMessage = `Hello Diana, I just made a TENTATIVE booking for ${formattedDate} from ${startTime} to ${endTime} under the name ${clientName}. Please confirm my appointment with the code: ${confirmationCode}`;
+            // Simple message for the client to send
+            const whatsappMessage = `Hello Diana, I confirm my booking for ${formattedDate} from ${bookingData.startTime} to ${bookingData.endTime}. My name is ${bookingData.name}. Please secure my spot!`;
             
             const whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
             whatsappLink.href = whatsappUrl;
+
+            // Optional: You can console.log the data so you know what they tried to book.
+            console.log("Client is attempting to book:", bookingData);
         };
 
         const resetView = () => {
@@ -434,13 +431,10 @@
             startTimeSelect.value = '';
             endTimeSelect.value = '';
             clientNameInput.value = '';
-            // Clear selections but don't re-render them automatically
             startTimeSelect.innerHTML = '<option value="">Select a start time</option>';
             endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
-            // Hide containers
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.add('hidden');
-            // Remove highlighting from calendar days
             document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
         };
 
