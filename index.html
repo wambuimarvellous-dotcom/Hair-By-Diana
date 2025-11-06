@@ -16,9 +16,11 @@
             color: #9ca3af;
             cursor: not-allowed;
         }
+        /* Style for days that have at least one booking */
         .calendar-day-cell.booked-day {
-            background-color: #fecaca;
+            background-color: #fecaca; /* Light red/pink to indicate some activity */
         }
+        /* Style for timeslots that are booked */
         .timeslot-btn.booked {
             background-color: #e5e7eb;
             color: #9ca3af;
@@ -52,7 +54,6 @@
 <body class="p-4 sm:p-8">
     <div id="app" class="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
         <header class="text-center border-b pb-4 mb-4">
-            <!-- UPDATED HEADING -->
             <h1 class="text-4xl font-bold text-gray-800 tracking-wide">Hair, Lashes & Nails by Diana</h1>
             <p class="text-lg text-gray-600">Online Booking</p>
         </header>
@@ -138,11 +139,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace with your actual Firebase project configuration.
-        // NOTE: These are dummy values and should be replaced by your real project configuration.
+        // This configuration will be replaced by the canvas environment at runtime
         const firebaseConfig = {
             apiKey: "AIzaSyDdOltW9_5YxAI4JObxHYVvkH8Ubh9tXnM",
             authDomain: "hair-by-diana.firebaseapp.com",
@@ -190,7 +190,7 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Sign in anonymously using the provided token or fall back to standard anonymous sign-in.
+                // Authenticate the user
                 const authPromise = typeof __initial_auth_token !== 'undefined'
                     ? signInWithCustomToken(auth, __initial_auth_token)
                     : signInAnonymously(auth);
@@ -200,12 +200,12 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        // MANDATORY FIREBASE PATH
+                        // >>> CRITICAL: Using the public/shared collection path for real-time visibility <<<
                         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        appointmentsCol = collection(db, `/artifacts/${appId}/users/${userId}/appointments`); 
+                        appointmentsCol = collection(db, `/artifacts/${appId}/public/data/appointments`); 
                         
                         renderCalendar();
-                        loadBookedSlots();
+                        loadBookedSlots(); // Starts the real-time listener (onSnapshot)
                         loadingMessage.classList.add('hidden');
                         mainContent.classList.remove('hidden');
                         
@@ -282,29 +282,32 @@
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
 
+            // Query only the appointments relevant to the current month to optimize reads
             const q = query(
                 appointmentsCol, 
                 where('startDateTime', '>=', startOfMonth.toISOString()),
                 where('startDateTime', '<=', endOfMonth.toISOString())
             );
 
-            // Real-time listener for confirmed appointments
+            // >>> CRITICAL: Real-time listener (onSnapshot) updates bookedSlots instantly <<<
             onSnapshot(q, (querySnapshot) => {
                 bookedSlots = querySnapshot.docs.map(doc => ({
                     start: new Date(doc.data().startDateTime),
                     end: new Date(doc.data().endDateTime)
                 }));
                 
-                // Update calendar day colors and time select options
+                // Update calendar day colors (booked-day class)
                 document.querySelectorAll('.calendar-day-cell').forEach(cell => {
+                    cell.classList.remove('booked-day');
+
                     const cellDate = new Date(cell.dataset.date).toDateString();
                     const hasBooking = bookedSlots.some(slot => slot.start.toDateString() === cellDate);
                     if (hasBooking) {
                         cell.classList.add('booked-day');
-                    } else {
-                        cell.classList.remove('booked-day');
                     }
                 });
+                
+                // Re-render time selects for the currently selected date to show newly booked times
                 renderTimeSelects();
             }, (error) => {
                 console.error("Error loading booked slots:", error);
@@ -330,6 +333,7 @@
                 const [hour, minute] = time.split(':');
                 const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hour, minute);
                 
+                // Check if this 30-minute interval is booked
                 const isBooked = bookedSlots.some(range => {
                     return slotDateTime >= range.start && slotDateTime < range.end;
                 });
@@ -364,18 +368,32 @@
 
             const timeSlots = generateTimeSlots('09:00', '17:00', 30);
             const startIndex = timeSlots.indexOf(selectedStartTime);
+            const [startHour, startMinute] = selectedStartTime.split(':').map(Number);
             
             for (let i = startIndex + 1; i < timeSlots.length; i++) {
                 const endTime = timeSlots[i];
                 const [endHour, endMinute] = endTime.split(':');
-                const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
                 
-                // Check if the current end time slot is overlapped by an existing booking
-                const isBooked = bookedSlots.some(range => {
-                    return slotDateTime > range.start && slotDateTime <= range.end;
-                });
-
-                if (isBooked) {
+                let isDurationBooked = false;
+                
+                const checkDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
+                
+                // Check every 30-minute block between start and end to ensure the whole duration is free
+                let currentTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
+                
+                while (currentTime < checkDate) {
+                    const overlapFound = bookedSlots.some(range => {
+                        return currentTime >= range.start && currentTime < range.end; 
+                    });
+                    
+                    if (overlapFound) {
+                        isDurationBooked = true;
+                        break;
+                    }
+                    currentTime.setMinutes(currentTime.getMinutes() + 30);
+                }
+                
+                if (isDurationBooked) {
                     break; // Stop adding options once a booked slot is encountered
                 }
 
@@ -394,7 +412,7 @@
             let currentTime = new Date();
             currentTime.setHours(startHour, startMin, 0, 0);
 
-            const endTime = new Date();
+            let endTime = new Date();
             endTime.setHours(endHour, endMin, 0, 0);
 
             while (currentTime < endTime) {
@@ -406,9 +424,9 @@
             return slots;
         };
         
+        // Helper function to check if a new requested range overlaps with existing bookings
         const hasOverlap = (newStart, newEnd, existingSlots) => {
             for (const slot of existingSlots) {
-                // Check if the new range overlaps with any existing slot
                 if (newStart < slot.end && newEnd > slot.start) {
                     return true;
                 }
@@ -435,9 +453,12 @@
             const newStartDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
             const newEndDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
 
-            // Final overlap check before presenting the WhatsApp button
+            // Final overlap check against the latest bookedSlots from Firestore
             if (hasOverlap(newStartDateTime, newEndDateTime, bookedSlots)) {
+                // If overlap is detected, assume another user just booked it.
                 console.error("This time slot has just been booked. Please select a different time."); 
+                resetView(false); // Keeps date selected, clears form
+                renderTimeSelects();
                 return;
             }
 
@@ -461,12 +482,11 @@
             whatsappText.textContent = 'Send Confirmation Message';
             whatsappLoader.classList.add('hidden');
             
-            // This function prepares the WhatsApp message text
+            // Prepare the WhatsApp message text
             const formattedDate = new Date(bookingData.startDateTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             const startTime = new Date(bookingData.startDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
             const endTime = new Date(bookingData.endDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-            // Store the full URL for easy access in the handler
             const whatsappMessage = `Hello Diana, I just secured my final booking for ${formattedDate} from ${startTime} to ${endTime}. My name is ${bookingData.name}.`;
             whatsappConfirmBtn.dataset.whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
         };
@@ -488,16 +508,13 @@
             bookingErrorMsg.classList.add('hidden');
 
             try {
-                // 1. Write the final, confirmed booking to the database
-                // This is the point where the slot becomes booked for everyone else immediately.
+                // 1. Write the final, confirmed booking to the PUBLIC database
                 await addDoc(appointmentsCol, currentBookingData);
                 
                 // 2. Booking is successful! Now navigate to WhatsApp
                 const whatsappUrl = whatsappConfirmBtn.dataset.whatsappUrl;
                 window.location.href = whatsappUrl; 
                 
-                // Note: The user is redirected immediately, the calendar updates automatically via onSnapshot.
-
             } catch (error) {
                 console.error("Error securing booking:", error);
                 
