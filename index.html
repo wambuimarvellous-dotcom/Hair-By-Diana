@@ -16,19 +16,14 @@
             color: #9ca3af;
             cursor: not-allowed;
         }
-        /* Style for days that have at least one booking */
         .calendar-day-cell.booked-day {
-            background-color: #fecaca; /* Light red/pink to indicate some activity */
+            background-color: #fecaca;
         }
-        /* Style for timeslots that are booked */
         .timeslot-btn.booked {
             background-color: #e5e7eb;
             color: #9ca3af;
             cursor: not-allowed;
             border-style: dashed;
-        }
-        .timeslot-btn.booked:hover {
-            background-color: #e5e7eb;
         }
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.3);
@@ -36,14 +31,9 @@
             border-top: 4px solid white;
             width: 20px;
             height: 20px;
-            -webkit-animation: spin 2s linear infinite;
             animation: spin 2s linear infinite;
             display: inline-block;
             margin-right: 8px;
-        }
-        @-webkit-keyframes spin {
-            0% { -webkit-transform: rotate(0deg); }
-            100% { -webkit-transform: rotate(360deg); }
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -60,9 +50,7 @@
 
         <div id="loading-message" class="text-center text-gray-500 my-4">Connecting to database...</div>
 
-        <!-- Main Booking Area -->
         <div id="main-content" class="flex flex-col lg:flex-row gap-8 hidden">
-            <!-- Calendar and Date Selection -->
             <div class="w-full lg:w-1/2">
                 <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
                     <div class="flex items-center justify-between mb-4">
@@ -85,26 +73,21 @@
                 </div>
             </div>
 
-            <!-- Timeslots and Form -->
             <div class="w-full lg:w-1/2">
                 <div id="timeslots-container" class="bg-gray-50 p-4 rounded-xl shadow-inner mb-6 hidden">
                     <h3 id="selected-date-title" class="text-lg font-semibold text-gray-700 mb-3">Available Time Ranges</h3>
                     
                     <form id="time-range-form" class="space-y-4">
-                        <!-- Client Name Input -->
                         <div>
                             <label for="client-name" class="block text-sm font-medium text-gray-700">Your Name</label>
                             <input type="text" id="client-name" required placeholder="e.g. Jane Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
                         </div>
-
-                        <!-- Start Time Select -->
                         <div>
                             <label for="start-time" class="block text-sm font-medium text-gray-700">Start Time</label>
                             <select id="start-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
                                 <option value="">Select a start time</option>
                             </select>
                         </div>
-                        <!-- End Time Select -->
                         <div>
                             <label for="end-time" class="block text-sm font-medium text-gray-700">End Time</label>
                             <select id="end-time" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2">
@@ -112,22 +95,33 @@
                             </select>
                         </div>
                         <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-xl font-semibold hover:bg-purple-700 transition duration-300 shadow-md">
-                            Reserve Slot (Final Step Required)
+                            Continue to Payment
                         </button>
                     </form>
                     <p id="no-timeslots" class="text-gray-400 text-center mt-4 hidden">No available timeslots for this day.</p>
                 </div>
                 
-                <div id="confirmation-container" class="bg-yellow-50 text-center p-6 rounded-xl shadow-inner hidden">
-                    <h3 class="text-xl font-semibold text-yellow-800 mb-3">Almost Booked!</h3>
-                    <p class="text-gray-600 mb-4 font-bold">Your booking is ready to be finalized.</p>
-                    <p class="text-gray-600 mb-6">Click the button below to **secure your slot** and send Diana the final confirmation message via WhatsApp.</p>
+                <div id="confirmation-container" class="bg-yellow-50 p-6 rounded-xl shadow-inner hidden">
+                    <h3 class="text-xl font-semibold text-yellow-800 mb-3 text-center">Final Step: Secure Your Slot</h3>
                     
-                    <!-- CRITICAL: This button handles the Firestore write before redirecting -->
-                    <button id="whatsapp-confirm-btn" class="inline-flex items-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg" disabled>
+                    <div class="bg-white p-4 rounded-lg border border-yellow-200 mb-6">
+                        <p class="text-sm font-bold text-gray-700 mb-2">To secure your booking, please pay a commitment fee of <span class="text-purple-700">Ksh 300</span>:</p>
+                        <div class="text-sm text-gray-600 space-y-1 mb-4 bg-gray-50 p-3 rounded">
+                            <p>1. Go to M-PESA</p>
+                            <p>2. Select <b>Send Money</b></p>
+                            <p>3. Phone: <b>0743407631</b> (Diana)</p>
+                            <p>4. Amount: <b>300</b></p>
+                        </div>
+                        
+                        <label for="mpesa-code" class="block text-sm font-medium text-gray-700">M-Pesa Transaction Code</label>
+                        <input type="text" id="mpesa-code" required placeholder="e.g. SAK27..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 p-2 uppercase">
+                        <p class="text-xs text-gray-500 mt-1 italic">*Required to verify your booking.</p>
+                    </div>
+
+                    <button id="whatsapp-confirm-btn" class="w-full inline-flex items-center justify-center bg-green-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-600 transition duration-300 shadow-lg disabled:opacity-50" disabled>
                         <span id="whatsapp-loader" class="hidden loader"></span>
                         <svg id="whatsapp-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.04 2.22c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.5 3.42 1.46 4.86l-1.5 5.48 5.6-1.47c1.4.78 2.94 1.2 4.5 1.2 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm0 18.04c-1.5 0-2.93-.41-4.17-1.16l-.29-.17-3.05.8-1.57-2.61.2-.26c-1.01-1.42-1.59-3.08-1.59-4.87 0-4.5 3.65-8.16 8.16-8.16s8.16 3.65 8.16 8.16c0 4.5-3.65 8.16-8.16 8.16zm5.12-6.5c-.28-.14-.58-.2-.89-.24-.31-.04-.63-.07-.94-.07-.94 0-1.87.27-2.6.84-.73.57-1.19 1.4-1.19 2.37v.06c0 .28-.2.58-.5.58-.1 0-.25-.04-.37-.09-.13-.05-.28-.12-.4-.19-.12-.07-.25-.16-.36-.26-.1-.1-.2-.22-.3-.35-.1-.13-.19-.28-.27-.44-.09-.17-.16-.35-.22-.54-.06-.2-.09-.4-.09-.6.04-.36.19-.69.41-1.01.21-.32.49-.57.81-.8.29-.21.5-.47.66-.78.16-.31.25-.66.25-1.03 0-.46-.14-.88-.41-1.29-.27-.41-.62-.76-1.03-1.07-.42-.31-.88-.55-1.37-.73-.49-.18-1.01-.27-1.53-.27-.51 0-.97.12-1.36.35-.39.23-.71.53-.96.9-.25.37-.41.8-.49 1.29-.08.49-.06 1.01.06 1.53.12.52.32.99.6 1.41.28.42.64.79 1.05 1.13.4.34.86.64 1.35.88.49.24 1.02.43 1.57.56.55.13 1.12.19 1.7.19 1.54 0 3.02-.68 4.09-1.92.22-.26.33-.55.33-.86 0-.27-.1-.53-.29-.76zM11.97 4.14c4.32 0 7.82 3.5 7.82 7.82s-3.5 7.82-7.82 7.82-7.82-3.5-7.82-7.82c0-4.32 3.5-7.82 7.82-7.82zm-1.8 11.23c-.15.22-.27.46-.35.73-.08.27-.12.55-.12.84 0 .42.17.84.5.9.33.06.66-.02.94-.28.28-.26.44-.61.5-1.01.06-.4.02-.82-.12-1.22-.14-.4-.36-.78-.65-1.09-.29-.31-.63-.59-1.01-.84-.38-.25-.79-.47-1.22-.66-.43-.19-.88-.35-1.34-.48-.46-.13-.93-.21-1.42-.21-1.02 0-2.03.39-2.82 1.15-.79.76-1.22 1.8-1.22 2.87 0 .53.11 1.05.32 1.54.21.49.52.92.89 1.28.37.36.8.63 1.26.8.46.17.95.27 1.46.27.53 0 1.04-.1 1.54-.29s.98-.44 1.41-.74c.43-.3.79-.65 1.08-1.04.29-.39.5-1.01.5-1.01v.01z"></path>
+                            <path d="M12.04 2.22c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.5 3.42 1.46 4.86l-1.5 5.48 5.6-1.47c1.4.78 2.94 1.2 4.5 1.2 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm0 18.04c-1.5 0-2.93-.41-4.17-1.16l-.29-.17-3.05.8-1.57-2.61.2-.26c-1.01-1.42-1.59-3.08-1.59-4.87 0-4.5 3.65-8.16 8.16-8.16s8.16 3.65 8.16 8.16c0 4.5-3.65 8.16-8.16 8.16zm5.12-6.5c-.28-.14-.58-.2-.89-.24-.31-.04-.63-.07-.94-.07-.94 0-1.87.27-2.6.84-.73.57-1.19 1.4-1.19 2.37v.06c0 .28-.2.58-.5.58-.1 0-.25-.04-.37-.09-.13-.05-.28-.12-.4-.19-.12-.07-.25-.16-.36-.26-.1-.1-.2-.22-.3-.35-.1-.13-.19-.28-.27-.44-.09-.17-.16-.35-.22-.54-.06-.2-.09-.4-.09-.6.04-.36.19-.69.41-1.01.21-.32.49-.57.81-.8.29-.21.5-.47.66-.78.16-.31.25-.66.25-1.03 0-.46-.14-.88-.41-1.29-.27-.41-.62-.76-1.03-1.07-.42-.31-.88-.55-1.37-.73-.49-.18-1.01-.27-1.53-.27-.51 0-.97.12-1.36.35-.39.23-.71.53-.96.9-.25.37-.41.8-.49 1.29-.08.49-.06 1.01.06 1.53.12.52.32.99.6 1.41.28.42.64.79 1.05 1.13.4.34.86.64 1.35.88.49.24 1.02.43 1.57.56.55.13 1.12.19 1.7.19 1.54 0 3.02-.68 4.09-1.92.22-.26.33-.55.33-.86 0-.27-.1-.53-.29-.76z"></path>
                         </svg>
                         <span id="whatsapp-text">Send Confirmation Message</span>
                     </button>
@@ -139,10 +133,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // This configuration will be replaced by the canvas environment at runtime
         const firebaseConfig = {
             apiKey: "AIzaSyDdOltW9_5YxAI4JObxHYVvkH8Ubh9tXnM",
             authDomain: "hair-by-diana.firebaseapp.com",
@@ -153,16 +146,14 @@
             measurementId: "G-3643RVMJK1"
         };
         
-        // **IMPORTANT:** Replace '254743407631' with your WhatsApp number.
         const DIANA_WHATSAPP_NUMBER = '254743407631'; 
         
         let db, auth, appointmentsCol, userId;
         let currentMonth = new Date();
         let selectedDate = null;
         let bookedSlots = [];
-        let currentBookingData = null; // Stores data before final WhatsApp click
+        let currentBookingData = null;
 
-        // UI elements
         const calendarGrid = document.getElementById('calendar-grid');
         const currentMonthDisplay = document.getElementById('current-month');
         const prevMonthBtn = document.getElementById('prev-month');
@@ -175,6 +166,7 @@
         const noTimeslotsMsg = document.getElementById('no-timeslots');
         const confirmationContainer = document.getElementById('confirmation-container');
         const whatsappConfirmBtn = document.getElementById('whatsapp-confirm-btn');
+        const mpesaCodeInput = document.getElementById('mpesa-code');
         const whatsappLoader = document.getElementById('whatsapp-loader');
         const whatsappText = document.getElementById('whatsapp-text');
         const loadingMessage = document.getElementById('loading-message');
@@ -184,42 +176,32 @@
 
         const initializeFirebase = async () => {
             try {
-                // setLogLevel('debug'); // Uncomment for detailed Firebase logs
-                const configToUse = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : firebaseConfig;
-                const app = initializeApp(configToUse);
+                const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
-                // Authenticate the user
-                const authPromise = typeof __initial_auth_token !== 'undefined'
-                    ? signInWithCustomToken(auth, __initial_auth_token)
-                    : signInAnonymously(auth);
-
-                await authPromise;
+                await signInAnonymously(auth);
                 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        // >>> CRITICAL: Using the public/shared collection path for real-time visibility <<<
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        appointmentsCol = collection(db, `/artifacts/${appId}/public/data/appointments`); 
+                        appointmentsCol = collection(db, `/artifacts/hair-by-diana/public/data/appointments`); 
                         
                         renderCalendar();
-                        loadBookedSlots(); // Starts the real-time listener (onSnapshot)
+                        loadBookedSlots();
                         loadingMessage.classList.add('hidden');
                         mainContent.classList.remove('hidden');
                         
-                        // Attach the FINAL booking handler after Firebase is ready
                         whatsappConfirmBtn.addEventListener('click', handleWhatsAppConfirmation);
-                        whatsappConfirmBtn.disabled = false;
-                        whatsappText.textContent = 'Send Confirmation Message';
-                    } else {
-                        console.log("User is signed out.");
+                        
+                        // Enable/Disable WhatsApp button based on M-Pesa code input
+                        mpesaCodeInput.addEventListener('input', () => {
+                            whatsappConfirmBtn.disabled = mpesaCodeInput.value.trim().length < 5;
+                        });
                     }
                 });
             } catch (error) {
                 console.error("Error initializing Firebase:", error);
-                loadingMessage.textContent = "Error loading application. Check console for details.";
             }
         };
 
@@ -231,86 +213,53 @@
             currentMonthDisplay.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
             calendarGrid.innerHTML = '';
             
-            // Add leading empty divs
             for (let i = 0; i < startDay; i++) {
                 calendarGrid.appendChild(document.createElement('div'));
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayElement = document.createElement('div');
-                dayElement.classList.add('p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'transition', 'hover:bg-purple-200');
-                dayElement.classList.add('calendar-day-cell');
-
+                dayElement.classList.add('p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'transition', 'hover:bg-purple-200', 'calendar-day-cell');
                 const fullDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                 dayElement.textContent = day;
                 dayElement.dataset.date = fullDate.toISOString(); 
 
-                // Disable past dates and Sundays (day 0)
                 if (fullDate.getDay() === 0 || fullDate < new Date().setHours(0,0,0,0)) {
                     dayElement.classList.add('disabled');
-                    dayElement.style.cursor = 'not-allowed';
                 } else {
                     dayElement.addEventListener('click', () => {
                         selectedDate = fullDate;
                         document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
                         dayElement.classList.add('ring-2', 'ring-purple-500', 'ring-offset-2');
-                        resetView(false); // Reset only the form, not the date
+                        resetView(false);
                         renderTimeSelects();
                     });
                 }
-                
                 calendarGrid.appendChild(dayElement);
             }
         };
-
-        prevMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth() - 1);
-            renderCalendar();
-            loadBookedSlots();
-            resetView(true);
-        });
-
-        nextMonthBtn.addEventListener('click', () => {
-            currentMonth.setMonth(currentMonth.getMonth() + 1);
-            renderCalendar();
-            loadBookedSlots();
-            resetView(true);
-        });
 
         const loadBookedSlots = () => {
             if (!appointmentsCol) return;
             const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
             const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
 
-            // Query only the appointments relevant to the current month to optimize reads
-            const q = query(
-                appointmentsCol, 
-                where('startDateTime', '>=', startOfMonth.toISOString()),
-                where('startDateTime', '<=', endOfMonth.toISOString())
-            );
+            const q = query(appointmentsCol, where('startDateTime', '>=', startOfMonth.toISOString()), where('startDateTime', '<=', endOfMonth.toISOString()));
 
-            // >>> CRITICAL: Real-time listener (onSnapshot) updates bookedSlots instantly <<<
-            onSnapshot(q, (querySnapshot) => {
-                bookedSlots = querySnapshot.docs.map(doc => ({
+            onSnapshot(q, (snapshot) => {
+                bookedSlots = snapshot.docs.map(doc => ({
                     start: new Date(doc.data().startDateTime),
                     end: new Date(doc.data().endDateTime)
                 }));
                 
-                // Update calendar day colors (booked-day class)
                 document.querySelectorAll('.calendar-day-cell').forEach(cell => {
                     cell.classList.remove('booked-day');
-
                     const cellDate = new Date(cell.dataset.date).toDateString();
-                    const hasBooking = bookedSlots.some(slot => slot.start.toDateString() === cellDate);
-                    if (hasBooking) {
+                    if (bookedSlots.some(slot => slot.start.toDateString() === cellDate)) {
                         cell.classList.add('booked-day');
                     }
                 });
-                
-                // Re-render time selects for the currently selected date to show newly booked times
                 renderTimeSelects();
-            }, (error) => {
-                console.error("Error loading booked slots:", error);
             });
         };
 
@@ -319,37 +268,20 @@
                 timeslotsContainer.classList.add('hidden');
                 return;
             }
-
             timeslotsContainer.classList.remove('hidden');
             selectedDateTitle.textContent = `Available Time Ranges for ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
-
             startTimeSelect.innerHTML = '<option value="">Select a start time</option>';
-            endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
-
-            const timeSlots = generateTimeSlots('09:00', '17:00', 30);
+            const slots = generateTimeSlots('09:00', '17:00', 30);
             let hasAvailableSlots = false;
 
-            timeSlots.forEach(time => {
-                const [hour, minute] = time.split(':');
-                const slotDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hour, minute);
-                
-                // Check if this 30-minute interval is booked
-                const isBooked = bookedSlots.some(range => {
-                    return slotDateTime >= range.start && slotDateTime < range.end;
-                });
-
-                const option = document.createElement('option');
-                option.value = time;
-                option.textContent = time;
-
-                if (isBooked) {
-                    option.disabled = true;
-                    option.classList.add('booked');
-                    option.textContent += ' (Fully Booked)';
-                } else {
-                    hasAvailableSlots = true;
-                }
-                startTimeSelect.appendChild(option);
+            slots.forEach(time => {
+                const [h, m] = time.split(':');
+                const slotDT = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), h, m);
+                const isBooked = bookedSlots.some(range => slotDT >= range.start && slotDT < range.end);
+                const opt = document.createElement('option');
+                opt.value = time; opt.textContent = time + (isBooked ? ' (Fully Booked)' : '');
+                if (isBooked) opt.disabled = true; else hasAvailableSlots = true;
+                startTimeSelect.appendChild(opt);
             });
 
             if (!hasAvailableSlots) {
@@ -363,184 +295,90 @@
 
         startTimeSelect.addEventListener('change', () => {
             endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
-            const selectedStartTime = startTimeSelect.value;
-            if (!selectedStartTime) return;
-
-            const timeSlots = generateTimeSlots('09:00', '17:00', 30);
-            const startIndex = timeSlots.indexOf(selectedStartTime);
-            const [startHour, startMinute] = selectedStartTime.split(':').map(Number);
-            
-            for (let i = startIndex + 1; i < timeSlots.length; i++) {
-                const endTime = timeSlots[i];
-                const [endHour, endMinute] = endTime.split(':');
-                
-                let isDurationBooked = false;
-                
-                const checkDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
-                
-                // Check every 30-minute block between start and end to ensure the whole duration is free
-                let currentTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
-                
-                while (currentTime < checkDate) {
-                    const overlapFound = bookedSlots.some(range => {
-                        return currentTime >= range.start && currentTime < range.end; 
-                    });
-                    
-                    if (overlapFound) {
-                        isDurationBooked = true;
-                        break;
-                    }
-                    currentTime.setMinutes(currentTime.getMinutes() + 30);
+            if (!startTimeSelect.value) return;
+            const slots = generateTimeSlots('09:00', '17:00', 30);
+            const startIndex = slots.indexOf(startTimeSelect.value);
+            for (let i = startIndex + 1; i < slots.length; i++) {
+                const [eh, em] = slots[i].split(':');
+                const checkDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), eh, em);
+                const [sh, sm] = startTimeSelect.value.split(':').map(Number);
+                let cur = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), sh, sm);
+                let overlap = false;
+                while (cur < checkDate) {
+                    if (bookedSlots.some(r => cur >= r.start && cur < r.end)) { overlap = true; break; }
+                    cur.setMinutes(cur.getMinutes() + 30);
                 }
-                
-                if (isDurationBooked) {
-                    break; // Stop adding options once a booked slot is encountered
-                }
-
-                const option = document.createElement('option');
-                option.value = endTime;
-                option.textContent = endTime;
-                endTimeSelect.appendChild(option);
+                if (overlap) break;
+                const opt = document.createElement('option');
+                opt.value = slots[i]; opt.textContent = slots[i];
+                endTimeSelect.appendChild(opt);
             }
         });
 
         const generateTimeSlots = (start, end, interval) => {
-            const slots = [];
-            const [startHour, startMin] = start.split(':').map(Number);
-            const [endHour, endMin] = end.split(':').map(Number);
-
-            let currentTime = new Date();
-            currentTime.setHours(startHour, startMin, 0, 0);
-
-            let endTime = new Date();
-            endTime.setHours(endHour, endMin, 0, 0);
-
-            while (currentTime < endTime) {
-                const hour = String(currentTime.getHours()).padStart(2, '0');
-                const minute = String(currentTime.getMinutes()).padStart(2, '0');
-                slots.push(`${hour}:${minute}`);
-                currentTime.setMinutes(currentTime.getMinutes() + interval);
+            const res = [];
+            let cur = new Date(); cur.setHours(...start.split(':'), 0, 0);
+            let stop = new Date(); stop.setHours(...end.split(':'), 0, 0);
+            while (cur < stop) {
+                res.push(cur.getHours().toString().padStart(2, '0') + ':' + cur.getMinutes().toString().padStart(2, '0'));
+                cur.setMinutes(cur.getMinutes() + interval);
             }
-            return slots;
-        };
-        
-        // Helper function to check if a new requested range overlaps with existing bookings
-        const hasOverlap = (newStart, newEnd, existingSlots) => {
-            for (const slot of existingSlots) {
-                if (newStart < slot.end && newEnd > slot.start) {
-                    return true;
-                }
-            }
-            return false;
+            return res;
         };
 
-        // STEP 1: Form Submission - Collects data and shows the final button
         timeRangeForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const clientName = clientNameInput.value.trim();
-            const startTime = startTimeSelect.value;
-            const endTime = endTimeSelect.value;
-
-            if (!selectedDate || !startTime || !endTime || !clientName) {
-                console.error("Please select a date, time range, and enter your name."); 
-                return;
-            }
-
-            const [startHour, startMinute] = startTime.split(':').map(Number);
-            const [endHour, endMinute] = endTime.split(':').map(Number);
-            
-            const newStartDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), startHour, startMinute);
-            const newEndDateTime = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), endHour, endMinute);
-
-            // Final overlap check against the latest bookedSlots from Firestore
-            if (hasOverlap(newStartDateTime, newEndDateTime, bookedSlots)) {
-                // If overlap is detected, assume another user just booked it.
-                console.error("This time slot has just been booked. Please select a different time."); 
-                resetView(false); // Keeps date selected, clears form
-                renderTimeSelects();
-                return;
-            }
-
-            // Prepare the final booking data and store it globally
+            const [sh, sm] = startTimeSelect.value.split(':').map(Number);
+            const [eh, em] = endTimeSelect.value.split(':').map(Number);
             currentBookingData = {
-                name: clientName,
-                startDateTime: newStartDateTime.toISOString(),
-                endDateTime: newEndDateTime.toISOString(),
+                name: clientNameInput.value.trim(),
+                startDateTime: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), sh, sm).toISOString(),
+                endDateTime: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), eh, em).toISOString(),
                 createdAt: new Date().toISOString()
             };
-
-            showConfirmation(currentBookingData); 
-        });
-
-        // STEP 2: Show Confirmation Screen
-        const showConfirmation = (bookingData) => {
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.remove('hidden');
-            bookingErrorMsg.classList.add('hidden');
-            whatsappConfirmBtn.disabled = false;
-            whatsappText.textContent = 'Send Confirmation Message';
-            whatsappLoader.classList.add('hidden');
-            
-            // Prepare the WhatsApp message text
-            const formattedDate = new Date(bookingData.startDateTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            const startTime = new Date(bookingData.startDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            const endTime = new Date(bookingData.endDateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        });
 
-            const whatsappMessage = `Hello Diana, I just secured my final booking for ${formattedDate} from ${startTime} to ${endTime}. My name is ${bookingData.name}.`;
-            whatsappConfirmBtn.dataset.whatsappUrl = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`;
-        };
-
-        // STEP 3: Handle Final WhatsApp Click (CRITICAL) - Writes to Firebase
         const handleWhatsAppConfirmation = async (e) => {
             e.preventDefault();
-            
-            if (!currentBookingData || !appointmentsCol) {
-                console.error("Booking data or Firestore connection missing.");
-                bookingErrorMsg.classList.remove('hidden');
-                return;
-            }
+            const mpesaCode = mpesaCodeInput.value.trim().toUpperCase();
+            if (!mpesaCode) return;
 
-            // Start loading state
             whatsappConfirmBtn.disabled = true;
             whatsappText.textContent = 'Securing Slot...';
             whatsappLoader.classList.remove('hidden');
-            bookingErrorMsg.classList.add('hidden');
 
             try {
-                // 1. Write the final, confirmed booking to the PUBLIC database
-                await addDoc(appointmentsCol, currentBookingData);
+                // Add MPESA code to data
+                const finalBooking = { ...currentBookingData, mpesaCode: mpesaCode, deposit: 300 };
+                await addDoc(appointmentsCol, finalBooking);
                 
-                // 2. Booking is successful! Now navigate to WhatsApp
-                const whatsappUrl = whatsappConfirmBtn.dataset.whatsappUrl;
-                window.location.href = whatsappUrl; 
+                const dateStr = new Date(finalBooking.startDateTime).toLocaleDateString();
+                const timeStr = new Date(finalBooking.startDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const msg = `Hello Diana, I've booked an appointment for ${dateStr} at ${timeStr}. Name: ${finalBooking.name}. M-Pesa Code: ${mpesaCode}`;
                 
+                window.location.href = `https://wa.me/${DIANA_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
             } catch (error) {
-                console.error("Error securing booking:", error);
-                
-                // Show error state
+                console.error(error);
                 whatsappConfirmBtn.disabled = false;
-                whatsappText.textContent = 'Booking Failed - Try Again';
+                whatsappText.textContent = 'Try Again';
                 whatsappLoader.classList.add('hidden');
                 bookingErrorMsg.classList.remove('hidden');
             }
         };
 
         const resetView = (resetDate = false) => {
-            if (resetDate) {
-                selectedDate = null;
-                document.querySelectorAll('.calendar-day-cell').forEach(el => el.classList.remove('ring-2', 'ring-purple-500', 'ring-offset-2'));
-            }
+            if (resetDate) selectedDate = null;
             currentBookingData = null;
-            startTimeSelect.value = '';
-            endTimeSelect.value = '';
-            clientNameInput.value = '';
-            startTimeSelect.innerHTML = '<option value="">Select a start time</option>';
-            endTimeSelect.innerHTML = '<option value="">Select an end time</option>';
+            mpesaCodeInput.value = '';
+            timeRangeForm.reset();
             timeslotsContainer.classList.add('hidden');
             confirmationContainer.classList.add('hidden');
         };
 
+        prevMonthBtn.addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); loadBookedSlots(); resetView(true); });
+        nextMonthBtn.addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); loadBookedSlots(); resetView(true); });
         window.onload = initializeFirebase;
     </script>
 </body>
